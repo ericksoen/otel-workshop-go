@@ -1,10 +1,5 @@
 ## Go Service
 
-This app listens on port `8080` and exposes a single endpoint at `/` that
-resposds with the string `hello from go`. For every request it receives, it
-calls the Python service at `http://localhost:8082/` and appends the response
-from the Python service it's own response.
-
 This app listens on port `3000` (443 when accessing from outside glitch) and
 exposes a single endpoint at `/` that responds with the string `hello from
 go`. For every request it receives, it should call the Python service at
@@ -12,17 +7,16 @@ go`. For every request it receives, it should call the Python service at
 
 The following modifications can be made:
 
-* The listen port can be modified by editing `.flaskenv`
-* The call destination can be modified by setting  `NODE_REQUEST_ENDPOINT` in `.env`
+* The `SERVER_PORT` can be modified by editing `.env`
+* The call destination can be modified by setting  `PYTHON_ENDPOINT` in `.env`
 
-The `.flaskenv` and `.env` files can be used to allow this workshop to be run
+The `.env` file can be used to allow this workshop to be run
 in other environments. For example, to run locally, the following changes could
 be made:
 
-* In `.flaskenv` set the listen port to `3001`
-* In `.env` set the `NODE_REQUEST_ENDPOINT` to `http://localhost:3002`
+* In `.env` set the `PYTHON_ENDPOINT` to `http://localhost:3001`
 
-To run in Docker, set `NODE_REQUEST_ENDPOINT` to `http://host.docker.internal:3002`
+To run in Docker, set `PYTHON_ENDPOINT` to `http://host.docker.internal:3001`
 
 ## Running the app
 
@@ -215,7 +209,7 @@ func (s *server) fetchFromPythonService(ctx context.Context) ([]byte, error) {
 	}
 	var body []byte
 
-	req, err := http.NewRequest("GET", os.Getenv("PYTHON_REMOTE_ENDPOINT"), nil)
+	req, err := http.NewRequest("GET", os.Getenv("PYTHON_ENDPOINT"), nil)
 	if err != nil {
 		return body, err
 	}

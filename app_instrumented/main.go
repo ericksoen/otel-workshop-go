@@ -105,7 +105,7 @@ func (s *server) fetchFromPythonService(ctx context.Context) ([]byte, error) {
 	}
 	var body []byte
 
-	req, err := http.NewRequest("GET", os.Getenv("PYTHON_REMOTE_ENDPOINT"), nil)
+	req, err := http.NewRequest("GET", os.Getenv("PYTHON_ENDPOINT"), nil)
 	if err != nil {
 		return body, err
 	}
