@@ -234,7 +234,7 @@ Note: You will notice an environment variable used above. This
 variable should be set in a `.env` file in the same directory as `main.go`.
 
 ```bash
-PYTHON_REMOTE_ENDPOINT=https://signalfx-otel-workshop-python.glitch.me
+PYTHON_ENDPOINT=https://signalfx-otel-workshop-python.glitch.me
 ```
 
 #### 6. Instrument HTTP client request object to instrument outgoing requests.
@@ -253,7 +253,7 @@ func (s *server) fetchFromPythonService(ctx context.Context) ([]byte, error) {
 	}
 	var body []byte
 
-	req, err := http.NewRequest("GET", os.Getenv("PYTHON_REMOTE_ENDPOINT"), nil)
+	req, err := http.NewRequest("GET", os.Getenv("PYTHON_ENDPOINT"), nil)
 	if err != nil {
 		return body, err
 	}
