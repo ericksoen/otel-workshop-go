@@ -99,7 +99,7 @@ gRPC. As a result, this workshop emits in Zipkin format.
 +	// configure default trace provider with the service name
 +	tp, err := sdktrace.NewProvider(
 +		sdktrace.WithConfig(sdktrace.Config{DefaultSampler: sdktrace.AlwaysSample()}),
-+		sdktrace.WithSyncer(exporter),
++		sdktrace.WithBatcher(exporter),
 +		sdktrace.WithResourceAttributes(core.Key(resourcekeys.ServiceKeyName).String("go-service")),
 +	)
 +	if err != nil {
