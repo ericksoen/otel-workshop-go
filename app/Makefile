@@ -1,11 +1,16 @@
 GOOS=$(shell go env GOOS)
 
-.DEFAULT_GOAL := run
+.DEFAULT_GOAL := run 
 
-.PHONY: build
+.PHONY: build 
 build:
-	go build -o ./bin/otel-demo-$(GOOS) main.go
+	go build -mod=vendor -o ./bin/otel-demo-$(GOOS) main.go
 
-.PHONY: run
+.PHONY: run 
 run:
-	go run main.go
+	go run -mod=vendor main.go
+
+.PHONY: install
+install:
+	go mod download
+	go mod vendor
