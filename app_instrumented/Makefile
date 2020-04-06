@@ -4,13 +4,12 @@ GOOS=$(shell go env GOOS)
 
 .PHONY: build 
 build:
-	go build -mod=vendor -o ./bin/otel-demo-$(GOOS) main.go
+	go build -o ./bin/otel-demo-$(GOOS) main.go
 
 .PHONY: run 
 run:
-	go run -mod=vendor main.go
+	go run main.go
 
 .PHONY: install
 install:
 	go mod download
-	go mod vendor
