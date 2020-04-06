@@ -2,10 +2,15 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
+	"strings"
+
+	"github.com/joho/godotenv"
 
 	"go.opentelemetry.io/otel/api/core"
 	"go.opentelemetry.io/otel/api/global"
@@ -22,9 +27,18 @@ import (
 func initTracer() error {
 	//exporter, err := otlp.NewExporter(
 	//	otlp.WithInsecure(),
-	//	otlp.WithAddress("localhost:55680"),
+    //	otlp.WithAddress(
+    //      os.Getenv("SPAN_EXPORTER_HOST") +
+    //      ":" +
+    //      os.Getenv("SPAN_EXPORTER_PORT")),
 	//)
-	exporter, err := zipkin.NewExporter("https://signalfx-otel-workshop-collector.glitch.me/api/v2/spans")
+    exporter, err := zipkin.NewExporter(
+        os.Getenv("SPAN_EXPORTER_PROTOCOL") +
+        "://" +
+        os.Getenv("SPAN_EXPORTER_HOST") +
+        ":" +
+        os.Getenv("SPAN_EXPORTER_PORT") +
+        os.Getenv("SPAN_EXPORTER_ENDPOINT"))
 	if err != nil {
 		return err
 	}
@@ -43,6 +57,8 @@ func initTracer() error {
 }
 
 func main() {
+    godotenv.Load()
+
 	err := initTracer()
 	check(err)
 	tr := global.Tracer("go-demo")
@@ -53,8 +69,8 @@ func main() {
 
 	var mux http.ServeMux
 	mux.Handle("/", othttp.NewHandler(http.HandlerFunc(s.handler), "hello"))
-	fmt.Println("listening on port 3000")
-	check(http.ListenAndServe(":3000", &mux))
+	fmt.Println("listening on port " + os.Getenv("SERVER_PORT"))
+	check(http.ListenAndServe(os.Getenv("SERVER_PORT"), &mux))
 }
 
 func check(err error) {
@@ -77,7 +93,7 @@ func (s *server) handler(w http.ResponseWriter, req *http.Request) {
 		response += "error fetching from python"
 	}
 
-	_, _ = io.WriteString(w, response)
+	_, _ = io.WriteString(w, strings.Replace(response,"<br>","\n",-1))
 }
 
 func (s *server) fetchFromPythonService(ctx context.Context) ([]byte, error) {
@@ -89,7 +105,7 @@ func (s *server) fetchFromPythonService(ctx context.Context) ([]byte, error) {
 	}
 	var body []byte
 
-	req, err := http.NewRequest("GET", "http://localhost:8082/", nil)
+	req, err := http.NewRequest("GET", os.Getenv("PYTHON_ENDPOINT"), nil)
 	if err != nil {
 		return body, err
 	}
