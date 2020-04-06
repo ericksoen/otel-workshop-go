@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-if [ ! -d /tmp/go ]  
+if [ ! -d /tmp/go ]
     echo "installing Go 1.13"
     curl -sSL https://dl.google.com/go/go1.13.9.linux-amd64.tar.gz -o - | tar xzf - -C /tmp
 then

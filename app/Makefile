@@ -1,11 +1,11 @@
 GOOS=$(shell go env GOOS)
 
-.DEFAULT_GOAL := run 
+.DEFAULT_GOAL := run
 
-.PHONY: build 
+.PHONY: build
 build:
 	go build -o ./bin/otel-demo-$(GOOS) main.go
 
-.PHONY: run 
+.PHONY: run
 run:
 	go run main.go

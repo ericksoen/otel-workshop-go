@@ -2,19 +2,24 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+    godotenv.Load()
 	s := &server{}
 
 	var mux http.ServeMux
 	mux.Handle("/", http.HandlerFunc(s.handler))
-	fmt.Println("listening on port 3000")
-	check(http.ListenAndServe(":3000", &mux))
+	fmt.Println("listening on port " + os.Getenv("SERVER_PORT"))
+	check(http.ListenAndServe(os.Getenv("SERVER_PORT"), &mux))
 }
 
 func check(err error) {
@@ -44,7 +49,7 @@ func (s *server) fetchFromPythonService(ctx context.Context) ([]byte, error) {
 	}
 	var body []byte
 
-	req, err := http.NewRequest("GET", "http://localhost:8082/", nil)
+	req, err := http.NewRequest("GET", os.Getenv("PYTHON_REMOTE_ENDPOINT"), nil)
 	if err != nil {
 		return body, err
 	}
