@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"strings"
 
 	"github.com/joho/godotenv"
 
@@ -92,7 +93,7 @@ func (s *server) handler(w http.ResponseWriter, req *http.Request) {
 		response += "error fetching from python"
 	}
 
-	_, _ = io.WriteString(w, response)
+	_, _ = io.WriteString(w, strings.Replace(response,"<br>","\n",-1))
 }
 
 func (s *server) fetchFromPythonService(ctx context.Context) ([]byte, error) {
