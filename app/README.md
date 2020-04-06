@@ -54,13 +54,17 @@ import (
 
 +	"go.opentelemetry.io/otel/api/core"
 +	"go.opentelemetry.io/otel/api/global"
++	"go.opentelemetry.io/otel/api/key"
++	"go.opentelemetry.io/otel/api/metric"
 +	"go.opentelemetry.io/otel/api/trace"
-+	//"go.opentelemetry.io/otel/exporters/otlp"
++	"go.opentelemetry.io/otel/exporters/metric/stdout"
 +	"go.opentelemetry.io/otel/exporters/trace/zipkin"
 +	"go.opentelemetry.io/otel/plugin/httptrace"
 +	"go.opentelemetry.io/otel/plugin/othttp"
++	"go.opentelemetry.io/otel/sdk/metric/controller/push"
 +	"go.opentelemetry.io/otel/sdk/resource/resourcekeys"
 +	sdktrace "go.opentelemetry.io/otel/sdk/trace"
++	// "go.opentelemetry.io/otel/exporters/otlp"
 )
 ```
 
@@ -70,12 +74,14 @@ Collector and have the OpenTelemetry Collector send to your back-end(s) of
 choice. OTLP uses gRPC and unfortunately it does not appear Glitch supports
 gRPC. As a result, this workshop emits in Zipkin format.
 
-### 2. Configure OpenTelemetry tracer
+### 2. Configure OpenTelemetry tracer and metrics
 ```diff
 	"go.opentelemetry.io/otel/plugin/othttp"
 	"go.opentelemetry.io/otel/sdk/resource/resourcekeys"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
+
++var requestPathKey = key.New("path")
 
 +func initTracer() error {
 +	//exporter, err := otlp.NewExporter(
@@ -112,6 +118,17 @@ gRPC. As a result, this workshop emits in Zipkin format.
 +	return nil
 +}
 
++func initMeter() *push.Controller {
++	pusher, err := stdout.NewExportPipeline(stdout.Config{
++		PrettyPrint:    true,
++		DoNotPrintTime: true,
++	}, time.Second*5)
++	if err != nil {
++		log.Fatal("Could not initialize stdout exporter:", err)
++	}
++	return pusher
++}
+
 func main() {
 ```
 
@@ -136,22 +153,28 @@ struct. This is optional and handlers can fetch their own tracers from the
 ```diff
 type server struct {
 +	tracer trace.Tracer
++	requestsCounter metric.Int64Counter
 }
 ```
 
-#### 3.b Initialize the tracer and add add it to the server instance
+#### 3.b Initialize the tracer and the meter
 
 ```diff
 func main() {
 	godotenv.Load()
 
++	pusher := initMeter()
++	defer pusher.Stop()
+
 +	err := initTracer()
 +	check(err)
 +	tr := global.Tracer("go-demo")
++	meter := pusher.Meter("go-demo/meter")
 
 -	s := &server{}
 +	s := &server{
 +		tracer: tr,
++		requestsCounter: metric.Must(meter).NewInt64Counter("requests-count", metric.WithKeys(requestPathKey)),
 +	}
 
 	var mux http.ServeMux
@@ -275,6 +298,24 @@ func (s *server) fetchFromPythonService(ctx context.Context) ([]byte, error) {
 This will generate 4 more spans each representing a sub-operation of the
 outgoing HTTP request such as DNS resolution, establishing the connection and
 sending the request.
+
+#### 7. Record metrics on every incoming request
+
+```diff
+func (s *server) handler(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
++	s.requestsCounter.Add(ctx, 1, requestPathKey.String(req.URL.Path))
+
+	response := "hello from go\n"
+	if pyBody, err := s.fetchFromPythonService(ctx); err == nil {
+		response += string(pyBody)
+	} else {
+		response += "error fetching from python"
+	}
+
+	_, _ = io.WriteString(w, strings.Replace(response, "<br>", "\n", -1))
+}
+```
 
 We can run the app again and this time it should emit spans to a locally running
 OpenTelemetry Collector.
